@@ -1,0 +1,76 @@
+body {
+    background-color: #f0f2f5;
+    font-family: 'Poppins', sans-serif;
+}
+
+header {
+    background: linear-gradient(135deg, #007bff, #00c4cc);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.drop-zone {
+    border: 3px dashed #007bff;
+    background-color: #ffffff;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+}
+
+.drop-zone.dragover {
+    background-color: #e3f2fd;
+    border-color: #00c4cc;
+}
+
+.card {
+    border-radius: 20px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border: none;
+    transition: transform 0.2s;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.btn-success {
+    background-color: #28a745;
+    border: none;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-outline-primary {
+    transition: all 0.3s;
+}
+
+.btn-outline-primary.active {
+    background-color: #007bff;
+    color: white;
+}
+
+.progress {
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    transition: width 0.4s ease;
+}
+
+img {
+    max-height: 300px;
+    object-fit: contain;
+    transition: opacity 0.3s;
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
