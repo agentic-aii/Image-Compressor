@@ -18,12 +18,15 @@ compressionLevels.addEventListener('click', (e) => {
     const button = e.target.closest('.btn');
     if (!button) return;
 
+    // Update active state
     compressionLevels.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
     button.classList.add('active');
 
+    // Set quality and update progress bar
     currentQuality = parseFloat(button.dataset.quality);
     updateProgressBar();
 
+    // Recompress if an image is loaded
     if (originalFile) compressImage(originalFile);
 });
 
@@ -39,13 +42,16 @@ applySizeBtn.addEventListener('click', () => {
         return;
     }
 
+    // Deselect predefined levels
     compressionLevels.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+
+    // Adjust quality to approximate target size
     adjustQualityForSize(originalFile, targetSizeKB * 1024); // Convert KB to bytes
 });
 
-// Update progress bar
+// Update progress bar based on quality
 function updateProgressBar() {
-    const progress = ((1 - currentQuality) * 100);
+    const progress = ((1 - currentQuality) * 100); // Invert quality for progress
     progressBar.style.width = `${progress}%`;
     progressBar.setAttribute('aria-valuenow', progress);
 }
@@ -53,6 +59,7 @@ function updateProgressBar() {
 // Handle file input
 imageInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
+// Drag and drop functionality
 dropZone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropZone.classList.add('dragover');
@@ -81,7 +88,7 @@ function handleFile(file) {
     reader.onload = (e) => {
         originalPreview.src = e.target.result;
         originalSize.textContent = `Size: ${(file.size / 1024).toFixed(2)} KB`;
-        compressImage(file);
+        compressImage(file); // Use current quality
     };
     reader.readAsDataURL(file);
 }
@@ -95,6 +102,7 @@ function compressImage(file) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
 
+        // Compress image
         canvas.toBlob(
             (blob) => {
                 compressedBlob = blob;
@@ -109,14 +117,14 @@ function compressImage(file) {
     img.src = URL.createObjectURL(file);
 }
 
-// Improved adjustQualityForSize to ensure size is at or below target
+// Adjust quality to match target size (binary search approximation)
 function adjustQualityForSize(file, targetSize) {
-    let quality = 0.5; // Start with mid-point
-    const step = 0.05; // Smaller steps for precision
+    let minQuality = 0.1;
+    let maxQuality = 1.0;
     let attempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 10; // Prevent infinite loop
 
-    function testCompression(testQuality) {
+    function testQuality(quality) {
         const img = new Image();
         img.onload = () => {
             const canvas = document.createElement('canvas');
@@ -127,32 +135,36 @@ function adjustQualityForSize(file, targetSize) {
 
             canvas.toBlob(
                 (blob) => {
-                    const currentSize = blob.size;
+                    const sizeDiff = blob.size - targetSize;
                     attempts++;
 
-                    if (currentSize <= targetSize || testQuality <= 0.1 || attempts >= maxAttempts) {
-                        // Stop if size is at or below target, quality is minimum, or max attempts reached
-                        currentQuality = testQuality;
+                    if (Math.abs(sizeDiff) < 1024 || attempts >= maxAttempts) {
+                        // Close enough or max attempts reached
+                        currentQuality = quality;
                         updateProgressBar();
                         compressImage(file);
-                        if (currentSize > targetSize) {
-                            alert('Could not compress below target size. Using lowest quality.');
-                        }
                         return;
                     }
 
-                    // If size is still too large, reduce quality
-                    quality -= step;
-                    testCompression(quality);
+                    if (sizeDiff > 0) {
+                        // Size too large, reduce quality
+                        maxQuality = quality;
+                    } else {
+                        // Size too small, increase quality
+                        minQuality = quality;
+                    }
+
+                    const newQuality = (minQuality + maxQuality) / 2;
+                    testQuality(newQuality);
                 },
                 'image/jpeg',
-                testQuality
+                quality
             );
         };
         img.src = URL.createObjectURL(file);
     }
 
-    testCompression(quality);
+    testQuality(0.5); // Start with middle quality
 }
 
 // Download compressed image
